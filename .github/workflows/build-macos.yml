@@ -8,39 +8,73 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Build app
-        run: |
-          mkdir -p build/MarcoManual.app/Contents/MacOS
-          mkdir -p build/MarcoManual.app/Contents/Resources/video
-          cp -R assets build/MarcoManual.app/Contents/Resources/
-          cp -R video build/MarcoManual.app/Contents/Resources/ || true
-          cp index.html build/MarcoManual.app/Contents/Resources/
-          swiftc macos/MarcoLauncher.swift -o build/MarcoManual.app/Contents/MacOS/MarcoManual \
-            -framework AppKit -framework WebKit
-
-      - name: Download video release asset if available
+      - name: Prepare video folder
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view video-source >/dev/null 2>&1; then
-            gh release download video-source --pattern marco-message.mp4 --dir build/MarcoManual.app/Contents/Resources/video
-          else
-            echo "No video-source release found; the app will use its video placeholder."
-          fi
+          mkdir -p video
+          gh release download video-source \
+            --pattern marco-message.mp4 \
+            --dir video
 
-      - name: Package app
+      - name: Build the Mac app
         run: |
-          ditto -c -k --sequesterRsrc --keepParent build/MarcoManual.app MarcoManual-macOS.zip
+          set -euo pipefail
 
-      - name: Publish release
+          mkdir -p build
+          swiftc -O -target arm64-apple-macos13.0 \
+            -framework Cocoa -framework WebKit \
+            macos/MarcoLauncher.swift -o build/MarcoLauncher-arm64
+
+          swiftc -O -target x86_64-apple-macos13.0 \
+            -framework Cocoa -framework WebKit \
+            macos/MarcoLauncher.swift -o build/MarcoLauncher-x86_64
+
+          APP="Marco User Manual.app"
+          CONTENTS="$APP/Contents"
+          RES="$CONTENTS/Resources"
+
+          mkdir -p "$CONTENTS/MacOS" "$RES"
+          cp index.html "$RES/index.html"
+          cp -R assets "$RES/assets"
+          cp -R video "$RES/video"
+
+          lipo -create \
+            build/MarcoLauncher-arm64 \
+            build/MarcoLauncher-x86_64 \
+            -output "$CONTENTS/MacOS/MarcoLauncher"
+          chmod 755 "$CONTENTS/MacOS/MarcoLauncher"
+
+          cat > "$CONTENTS/Info.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleName</key><string>Marco User Manual</string>
+            <key>CFBundleDisplayName</key><string>Relationship v1.0</string>
+            <key>CFBundleIdentifier</key><string>com.gift.marco-usermanual</string>
+            <key>CFBundleVersion</key><string>1.0</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>LSMinimumSystemVersion</key><string>13.0</string>
+            <key>NSHighResolutionCapable</key><true/>
+            <key>CFBundleExecutable</key><string>MarcoLauncher</string>
+            <key>NSPrincipalClass</key><string>NSApplication</string>
+          </dict></plist>
+          PLIST
+
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$APP" Marco-User-Manual-macOS.zip
+
+      - name: Publish downloadable app
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v1.0.${GITHUB_RUN_NUMBER}" MarcoManual-macOS.zip \
-            --title "Marco Manual for Mac" \
-            --notes "A tiny anniversary surprise for Marco."
+          TAG="v1.0.${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" Marco-User-Manual-macOS.zip \
+            --title "Relationship v1.0 — ${TAG}" \
+            --notes "Download and extract the ZIP, then move Marco User Manual.app to Applications. On first launch, macOS may ask you to allow it in System Settings → Privacy & Security."
