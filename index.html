@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111713">
+  <title>Relationship v1.0</title>
+  <style>
+    :root { color-scheme: dark; --ink:#f3f1e9; --muted:#b5beb5; --line:#37413a; --green:#a9d6ad; --mint:#b8f3c1; --paper:#1c241f; --black:#080b09; --cream:#eee9dc; }
+    * { box-sizing:border-box }
+    html,body { min-height:100%; margin:0 }
+    body { background:#111713; color:var(--ink); font:16px/1.58 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif }
+    button,input { font:inherit }
+    .app { width:min(900px,100%); min-height:100vh; margin:auto; display:flex; flex-direction:column; padding:22px clamp(16px,4vw,38px) 26px }
+    .chrome { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:0 2px 15px; border-bottom:1px solid #ffffff20; color:#d4ddd5; font-size:12px; letter-spacing:.1em; text-transform:uppercase }
+    .brand { font-weight:800 }
+    .step-count { color:#aab6ac; white-space:nowrap }
+    .progress { height:3px; background:#ffffff16; overflow:hidden }
+    .progress-fill { width:16.666%; height:100%; background:var(--mint); transition:width .35s ease }
+    main { flex:1; display:flex; align-items:center; padding:25px 0 }
+    .page { display:none; width:100%; animation:arrive .36s ease both }
+    .page.active { display:block }
+    .surface { border:1px solid #ffffff1c; border-radius:24px; background:linear-gradient(145deg,#202a23,#171d19 74%); padding:clamp(24px,5vw,48px); box-shadow:0 25px 75px #0005 }
+    .eyebrow { color:var(--green); font-size:12px; font-weight:800; letter-spacing:.16em; text-transform:uppercase }
+    h1 { margin:14px 0 9px; font-size:clamp(40px,8vw,76px); line-height:.99; letter-spacing:-.065em }
+    h2 { margin:0 0 18px; font-size:clamp(24px,4vw,36px); letter-spacing:-.035em; line-height:1.12 }
+    h3 { margin:0 0 12px; color:var(--green); font-size:13px; letter-spacing:.13em; text-transform:uppercase }
+    p { margin:0 0 15px }
+    .lede { color:#d5dbd2; max-width:620px; font-size:clamp(16px,2vw,19px) }
+    .anniversary-copy { max-width:650px; margin-top:32px; padding-top:24px; border-top:1px solid #ffffff22; color:#e6e8df }
+    .anniversary-copy strong { display:block; margin-bottom:15px; color:#fff; font-size:20px }
+    .anniversary-copy p:last-child { margin-bottom:0 }
+    .page-kicker { color:var(--green); font-size:12px; font-weight:750; letter-spacing:.15em; text-transform:uppercase; margin-bottom:11px }
+    .list { display:grid; gap:10px; padding:0; margin:0; list-style:none }
+    .list li { position:relative; padding:11px 14px 11px 39px; border:1px solid #ffffff16; border-radius:12px; background:#ffffff08 }
+    .list li::before { content:"•"; position:absolute; left:17px; top:10px; color:var(--mint); font-weight:900 }
+    .photo-page { overflow:hidden; border:1px solid #ffffff1c; border-radius:24px; background:linear-gradient(145deg,#202a23,#171d19 74%); padding:clamp(20px,4vw,36px); box-shadow:0 25px 75px #0005; }
+    .monitor-photo { display:block; width:min(100%,440px); height:340px; object-fit:contain; object-position:center; margin:0 auto 26px; border-radius:14px; background:#080b09; }
+    .photo-content { width:100%; }
+    .photo-content h2 { color:white; }
+    .bug-list { counter-reset:bug; }
+    .bug-list li { padding-left:54px; }
+    .bug-list li::before { counter-increment:bug; content:counter(bug,decimal-leading-zero); top:12px; left:15px; font-size:12px; color:var(--green); }
+    .terminal-window { overflow:hidden; border:3px solid #17ee27; border-radius:18px; background:#050805; box-shadow:0 0 15px #11f32977,0 0 44px #11f32933; color:#23fa36; font:16px/1.55 "SFMono-Regular",Consolas,"Liberation Mono",monospace; }
+    .terminal-titlebar { height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; background:#19f328; color:#061007; font:800 17px/1 ui-sans-serif,system-ui,sans-serif; letter-spacing:.03em }
+    .lights { display:flex; gap:11px }
+    .light { width:17px; height:17px; border:1px solid #06100799; border-radius:50% }
+    .light.red { background:#ff635f }.light.yellow { background:#ffd44f }.light.green { background:#61c96d }
+    .terminal-body { min-height:380px; max-height:52vh; overflow:auto; padding:22px 20px }
+    .terminal-welcome { margin:0 0 24px; white-space:pre-line }
+    .terminal-output { display:grid; gap:5px; margin:12px 0 25px; }
+    .terminal-inputline { display:flex; gap:8px; align-items:center }
+    .prompt { flex:none }
+    .terminal-input { min-width:0; flex:1; border:0; outline:0; background:transparent; color:#37ff48; caret-color:#37ff48; }
+    .terminal-input:focus-visible { outline:1px dashed #37ff48; outline-offset:4px }
+    .terminal-actions { margin-top:18px; }
+    .diagnostic { border-left:3px solid var(--green); padding:7px 0 7px 22px; color:#e7ece5; font-size:clamp(16px,2.2vw,19px) }
+    .diagnostic p { margin:0 0 16px }
+    .diagnostic p:last-child { margin-bottom:0; font-weight:750; color:var(--mint) }
+    .video-stage,.video-stage .surface,.video-stage #video-title,.video-stage .lede,.video-stage .final-note,.video-stage .closing-note { text-align:center }
+    .video-frame { width:min(100%,740px); max-height:60vh; margin:24px auto 18px; background:#050705; border:1px solid #ffffff25; border-radius:18px; overflow:hidden; }
+    video { display:block; width:100%; max-height:60vh; background:#050705; }
+    .video-missing { padding:34px 24px; color:var(--muted); }
+    .video-missing strong { color:#fff }
+    .final-note { width:100%; margin:12px auto 0; color:#e9e9df; font-size:18px }
+    .closing-note { width:100%; margin:30px auto 0; color:var(--green); font-size:17px; font-weight:700 }
+    .controls { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:24px; }
+    .controls.right { justify-content:flex-end }
+    .nav-btn { min-height:46px; padding:10px 17px; border:1px solid #ffffff32; border-radius:999px; background:#ffffff0d; color:var(--ink); font-weight:700; cursor:pointer; transition:transform .15s,background .15s,border .15s }
+    .nav-btn:hover { transform:translateY(-1px); background:#ffffff17; border-color:#ffffff62 }
+    .nav-btn.primary { border-color:var(--mint); background:var(--mint); color:#102014; }
+    .nav-btn.primary:hover { background:#d0f8d4 }
+    .nav-btn:focus-visible { outline:3px solid #e4e9b0; outline-offset:3px }
+    .hint { color:#91a096; font-size:12px; }
+    @keyframes arrive { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+    @media (max-width:600px) {
+      .app { padding:14px 12px 18px }
+      .surface { border-radius:18px }
+      .photo-page { border-radius:18px }
+      .monitor-photo { height:280px; }
+      .terminal-body { min-height:340px; padding:17px 14px; font-size:13px }
+      .terminal-titlebar { height:48px }
+      .controls { margin-top:18px }
+      .nav-btn { padding:9px 13px }
+    }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; scroll-behavior:auto!important } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="chrome">
+      <div class="brand">RELATIONSHIP v1.0</div>
+      <div class="step-count" id="stepCount" aria-live="polite">01 / 06</div>
+    </header>
+    <div class="progress" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+    <main>
+      <section class="page active" data-page="0" aria-labelledby="intro-title">
+        <div class="surface">
+          <div class="eyebrow"><strong>One year of us · anniversary edition</strong></div>
+          <h1 id="intro-title">RELATIONSHIP<br>v1.0</h1>
+          <p class="lede">One year of us · a very unofficial user manual for my favorite person in the whole universe.</p>
+          <div class="anniversary-copy">
+            <strong>Happy first anniversary, mis Chätzli!</strong>
+            <p>One year ago, I was in your bed and you officially asked me to be your girlfriend. We had no idea what was ahead of us, but somehow we made it to Year One.</p>
+            <p>What a ride! So I made you a user manual with all the things I’ve learned about your settings and side quests over the past 12 months. Hope you enjoy it!</p>
+          </div>
+          <div class="controls right"><button class="nav-btn primary" data-next>Open your manual →</button></div>
+        </div>
+      </section>
+
+      <section class="page" data-page="1" aria-labelledby="conditions-title">
+        <div class="photo-page">
+          <img class="monitor-photo" src="assets/monitor-background.png" alt="A large curved computer monitor glowing with code at a desk at night">
+          <div class="photo-content">
+            <div class="page-kicker">01 · Operating conditions</div>
+            <h2 id="conditions-title">MARKIN’S OPERATING CONDITIONS</h2>
+            <ul class="list">
+              <li>Requires food. Cheese, beans and chocolate are premium fuel.</li>
+              <li>Requires autonomy. Supervision may trigger system resistance.</li>
+              <li>Do not interrupt during hyperfocus. Approach only when snacks are available.</li>
+              <li>May enter Lumberjack Mode when exposed to wood, tools, or the garden.</li>
+              <li>Runs 17 projects simultaneously in his brain.</li>
+              <li>May spontaneously turn a minor inconvenience into a full engineering project.</li>
+              <li>Physical activity may be initiated at any time. Resting is still under development.</li>
+              <li>Can spend hours optimizing a system that was technically working already.</li>
+              <li>When a new idea is detected, the existing schedule automatically becomes obsolete.</li>
+            </ul>
+            <div class="controls"><button class="nav-btn" data-prev>← Back</button><button class="nav-btn primary" data-next>Next page →</button></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" data-page="2" aria-labelledby="features-title">
+        <div class="surface">
+          <div class="page-kicker">02 · UNDOCUMENTED FEATURES</div>
+          <h2 id="features-title">UNDOCUMENTED FEATURES</h2>
+          <ul class="list">
+            <li>Massive heart. Disguised as a grumpy motherfucker.</li>
+            <li>Sensitive soul that comes with a complex user interface.</li>
+            <li>Deeply caring. May pretend not to. Evidence suggests otherwise.</li>
+            <li>Genuinely wants to understand how things work — including himself.</li>
+            <li>Problem-solving skills: dangerously high.</li>
+            <li>Sees possibilities where other people see obstacles. May also see 47 possibilities at once.</li>
+            <li>Love language: will build you an entire automation system before you even realize how much work it took.</li>
+          </ul>
+          <div class="controls"><button class="nav-btn" data-prev>← Back</button><button class="nav-btn primary" data-next>Next page →</button></div>
+        </div>
+      </section>
+
+      <section class="page" data-page="3" aria-labelledby="bugs-title">
+        <div class="surface">
+          <div class="page-kicker">03 · Known bugs</div>
+          <h2 id="bugs-title">KNOWN BUGS</h2>
+          <ol class="list bug-list">
+            <li>Emotional regulation may occasionally take a minute to load.</li>
+            <li>Low tolerance for other people's stupidity.</li>
+            <li>Expects the day to follow the plan, despite being the main source of unexpected side quests.</li>
+            <li>Frequently mistakes “being productive” for “doing the exact 63 tasks originally planned.”</li>
+            <li>Brain tabs cannot be closed individually.</li>
+          </ol>
+          <div class="controls"><button class="nav-btn" data-prev>← Back</button><button class="nav-btn primary" data-next>Next page →</button></div>
+        </div>
+      </section>
+
+      <section class="page" data-page="4" aria-labelledby="terminal-heading">
+        <div class="page-kicker">04 · Troubleshooting console</div>
+        <h2 id="terminal-heading" class="visually-hidden">Troubleshooting console</h2>
+        <div class="terminal-window">
+          <div class="terminal-titlebar"><span>TERMINAL</span><span class="lights" aria-hidden="true"><i class="light red"></i><i class="light yellow"></i><i class="light green"></i></span></div>
+          <div class="terminal-body" id="terminalBody" aria-live="polite">
+            <div class="terminal-welcome">C:\&gt;
+Welcome to the relationship troubleshooting terminal.
+Type 'help' to display available commands.</div>
+            <div id="terminalHistory"></div>
+            <form class="terminal-inputline" id="terminalForm">
+              <label class="prompt" for="terminalInput">C:\&gt;</label>
+              <input id="terminalInput" class="terminal-input" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a terminal command">
+            </form>
+            <div class="terminal-output" id="commandOutput" hidden></div>
+            <div class="terminal-actions" id="terminalActions" hidden><button class="nav-btn primary" data-next>Continue →</button></div>
+          </div>
+        </div>
+        <div class="controls"><button class="nav-btn" data-prev>← Back</button><span class="hint">This terminal accepts one command: help</span></div>
+      </section>
+
+      <section class="page" data-page="5" aria-labelledby="diagnostic-title">
+        <div class="surface">
+          <div class="page-kicker">05 · Final diagnostic</div>
+          <h2 id="diagnostic-title">FINAL DIAGNOSTIC</h2>
+          <div class="diagnostic">
+            <p>All systems are functioning above expected parameters.</p>
+            <p>One unresolved question remains: how does this particular model manage to generate so many projects and still be this amazing?</p>
+            <p>Run final diagnostic?</p>
+          </div>
+          <div class="controls"><button class="nav-btn" data-prev>← Back</button><button class="nav-btn primary" id="runDiagnostic">Run final diagnostic →</button></div>
+        </div>
+      </section>
+
+      <section class="page video-stage" data-page="6" aria-labelledby="video-title">
+        <div class="surface">
+          <div class="page-kicker">Diagnostic complete</div>
+          <h2 id="video-title">One last thing…</h2>
+          <div class="video-frame">
+            <video id="myVideo" controls playsinline preload="metadata" hidden>
+              <source src="video/marco-message.mp4" type="video/mp4">
+              Your browser cannot play this video.
+            </video>
+            <div class="video-missing" id="videoMissing">Your video will appear here.<br>Add it as <strong>video/marco-message.mp4</strong> before publishing the app.</div>
+          </div>
+          <p class="final-note">Thank you for being my favorite person in the whole universe.</p>
+          <p class="closing-note">Here’s to whatever side quest comes next. 🥂</p>
+          <div class="controls"><button class="nav-btn" data-prev>← Back</button></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const pages = [...document.querySelectorAll('.page')];
+    const stepCount = document.getElementById('stepCount');
+    const progressFill = document.getElementById('progressFill');
+    const terminalForm = document.getElementById('terminalForm');
+    const terminalInput = document.getElementById('terminalInput');
+    const terminalHistory = document.getElementById('terminalHistory');
+    const commandOutput = document.getElementById('commandOutput');
+    const terminalActions = document.getElementById('terminalActions');
+    const video = document.getElementById('myVideo');
+    const videoMissing = document.getElementById('videoMissing');
+    let currentPage = 0;
+    let helpShown = false;
+
+    function showPage(index) {
+      currentPage = Math.max(0, Math.min(index, pages.length - 1));
+      pages.forEach((page, i) => page.classList.toggle('active', i === currentPage));
+      stepCount.textContent = `${String(currentPage + 1).padStart(2, '0')} / ${String(pages.length).padStart(2, '0')}`;
+      progressFill.style.width = `${((currentPage + 1) / pages.length) * 100}%`;
+      if (currentPage === 4 && !helpShown) setTimeout(() => terminalInput.focus(), 80);
+      if (currentPage === 6) startFinalVideo();
+    }
+
+    document.querySelectorAll('[data-next]').forEach(button => button.addEventListener('click', () => showPage(currentPage + 1)));
+    document.querySelectorAll('[data-prev]').forEach(button => button.addEventListener('click', () => showPage(currentPage - 1)));
+    document.getElementById('runDiagnostic').addEventListener('click', () => showPage(6));
+
+    const commands = [
+      '1. Feed cheese.',
+      '2. Allow uninterrupted time alone for a full system reboot.',
+      '3. Ask whether he has 24 more projects planned.',
+      '4. Provide a new videogame.',
+      '5. Mention a mountain hut. Observe Lumberjack Mode activate.',
+      '6. Give him a problem that can be solved with engineering.',
+      '7. If he starts optimizing something, do not ask when he will finish.',
+      '8. If the schedule fails, remind the system that tomorrow is another opportunity to create an even more ambitious schedule.'
+    ];
+
+    terminalForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const command = terminalInput.value.trim();
+      if (!command) return;
+      const echo = document.createElement('div');
+      echo.textContent = `C:\\> ${command}`;
+      terminalHistory.appendChild(echo);
+      terminalInput.value = '';
+      if (command.toLowerCase() === 'help') {
+        commandOutput.replaceChildren();
+        commands.forEach(line => {
+          const row = document.createElement('div');
+          row.textContent = line;
+          commandOutput.appendChild(row);
+        });
+        commandOutput.hidden = false;
+        terminalActions.hidden = false;
+        helpShown = true;
+      } else {
+        const error = document.createElement('div');
+        error.textContent = `Command not recognized: ${command}. Type 'help'.`;
+        commandOutput.replaceChildren(error);
+        commandOutput.hidden = false;
+      }
+      document.getElementById('terminalBody').scrollTop = document.getElementById('terminalBody').scrollHeight;
+    });
+
+    function startFinalVideo() {
+      video.addEventListener('loadedmetadata', () => {
+        video.hidden = false;
+        videoMissing.hidden = true;
+        video.play().catch(() => {});
+      }, { once: true });
+      video.addEventListener('error', () => {
+        video.hidden = true;
+        videoMissing.hidden = false;
+      }, { once: true });
+      video.load();
+      if (video.readyState >= 1 && !video.error) {
+        video.hidden = false;
+        videoMissing.hidden = true;
+        video.play().catch(() => {});
+      }
+    }
+  </script>
+</body>
+</html>
